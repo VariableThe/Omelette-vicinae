@@ -117,10 +117,7 @@ ${questionsList}
                 metadata={
                   <List.Item.Detail.Metadata>
                     <List.Item.Detail.Metadata.Label title="Title" text={conversation.title} />
-                    <List.Item.Detail.Metadata.Label
-                      title="Created"
-                      text={formatFullTime(conversation.createdAt)}
-                    />
+                    <List.Item.Detail.Metadata.Label title="Created" text={formatFullTime(conversation.createdAt)} />
                     <List.Item.Detail.Metadata.Label
                       title="Messages"
                       text={conversation.questions?.length.toString() ?? "0"}

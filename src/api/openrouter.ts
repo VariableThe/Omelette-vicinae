@@ -16,12 +16,12 @@ export async function generateStreamedResponse(
 ): Promise<string | false> {
   const preferences = getPreferenceValues<ChatPreferences>();
   const modelId = (model?.model ?? preferences.defaultModel ?? "meta-llama/llama-3.1-8b-instruct:free").trim();
-  
+
   try {
     const lastIndex = questions.map((q) => q.id).indexOf(questionId);
     const contextQuestions = questions.slice(0, lastIndex);
     const newQuestion = questions[lastIndex];
-    
+
     const messages = [
       { role: "system", content: "You are a helpful assistant." },
       ...contextQuestions.flatMap((q) => [
@@ -31,25 +31,22 @@ export async function generateStreamedResponse(
       { role: "user", content: newQuestion.prompt },
     ];
 
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${preferences.openrouterApiKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": "https://raycast.com",
-          "X-Title": "OpenRouter",
-        },
-        body: JSON.stringify({
-          model: modelId,
-          messages: messages,
-          max_tokens: 1000,
-          stream: true,
-        }),
-        signal: abortSignal,
-      }
-    );
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${preferences.openrouterApiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://raycast.com",
+        "X-Title": "OpenRouter",
+      },
+      body: JSON.stringify({
+        model: modelId,
+        messages: messages,
+        max_tokens: 1000,
+        stream: true,
+      }),
+      signal: abortSignal,
+    });
 
     if (!response.ok) {
       const errorText = await response.text();

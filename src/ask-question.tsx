@@ -44,7 +44,7 @@ export default function AskQuestion({ conversationId }: ChatProps) {
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
   const [isAskingQuestion, setIsAskingQuestion] = useState<boolean>(false);
   const [isFirstQuestion, setIsFirstQuestion] = useState<boolean>(!conversationId);
-  
+
   const { add: addConversation } = useConversations();
   const {
     isLoading: isLoadingQuestions,
@@ -54,7 +54,7 @@ export default function AskQuestion({ conversationId }: ChatProps) {
     remove: removeQuestion,
     refresh: refreshQuestions,
   } = useQuestions();
-  
+
   const questions = getByConversationId(searchQuestion.conversationId);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
 
@@ -125,7 +125,11 @@ export default function AskQuestion({ conversationId }: ChatProps) {
         {!isAskingQuestion ? (
           <>
             {isValidQuestionPrompt(searchQuestion.prompt) && (
-              <Action title="Send Message" icon={Icon.Message} onAction={() => handleAskQuestion({ ...searchQuestion })} />
+              <Action
+                title="Send Message"
+                icon={Icon.Message}
+                onAction={() => handleAskQuestion({ ...searchQuestion })}
+              />
             )}
             <Action
               title="New Chat"
@@ -179,7 +183,11 @@ export default function AskQuestion({ conversationId }: ChatProps) {
           }
         />
       ) : questions.length === 0 ? (
-        <List.EmptyView title="Start a Conversation" description="Type a message above to get started." icon={Icon.Bubble} />
+        <List.EmptyView
+          title="Start a Conversation"
+          description="Type a message above to get started."
+          icon={Icon.Bubble}
+        />
       ) : (
         questions.map((q) => (
           <List.Item
@@ -187,11 +195,7 @@ export default function AskQuestion({ conversationId }: ChatProps) {
             key={q.id}
             title={q.prompt}
             accessories={q.isStreaming ? [{ icon: Icon.CircleProgress }] : undefined}
-            detail={
-              <List.Item.Detail
-                markdown={q.id === selectedQuestionId ? q.response || output : q.response}
-              />
-            }
+            detail={<List.Item.Detail markdown={q.id === selectedQuestionId ? q.response || output : q.response} />}
             actions={renderActions(q)}
           />
         ))
