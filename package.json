@@ -2,7 +2,7 @@
   "name": "openrouter",
   "title": "OpenRouter",
   "description": "Simple, powerful chat with any model via OpenRouter (GPT-4, Claude, Llama 3, etc.)",
-  "icon": "assets/icon.png",
+  "icon": "icon.png",
   "author": "the_variable",
   "categories": [
     "Productivity",
