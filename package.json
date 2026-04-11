@@ -3,7 +3,11 @@
   "title": "OpenRouter",
   "description": "Simple, powerful chat with any model via OpenRouter (GPT-4, Claude, Llama 3, etc.)",
   "icon": "icon.png",
-  "author": "ragnor",
+  "author": "the_variable",
+  "categories": [
+    "Productivity",
+    "Communication"
+  ],
   "license": "MIT",
   "commands": [
     {
