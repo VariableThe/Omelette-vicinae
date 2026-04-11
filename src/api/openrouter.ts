@@ -87,7 +87,9 @@ export async function generateStreamedResponse(
                   handleStreamingOutput(output);
                 }
               }
-            } catch (e) {}
+            } catch (e) {
+              console.error(e);
+            }
           }
         }
       });
@@ -103,35 +105,31 @@ export async function generateStreamedResponse(
 export async function generateResponse(prompt: string): Promise<string | false> {
   const preferences = getPreferenceValues<ChatPreferences>();
   const modelId = (preferences.defaultModel ?? "meta-llama/llama-3.1-8b-instruct:free").trim();
-  try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${preferences.openrouterApiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://raycast.com",
-        "X-Title": "OpenRouter",
-      },
-      body: JSON.stringify({
-        model: modelId,
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 100,
-        stream: false,
-      }),
-    });
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${preferences.openrouterApiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": "https://raycast.com",
+      "X-Title": "OpenRouter",
+    },
+    body: JSON.stringify({
+      model: modelId,
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 100,
+      stream: false,
+    }),
+  });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText);
-    }
-
-    const responseData = (await response.json()) as NonStreamedToken;
-    if (responseData.choices && responseData.choices.length > 0) {
-      const message = responseData.choices[0].message;
-      return "content" in message ? message.content : false;
-    }
-    return false;
-  } catch (error) {
-    throw error;
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText);
   }
+
+  const responseData = (await response.json()) as NonStreamedToken;
+  if (responseData.choices && responseData.choices.length > 0) {
+    const message = responseData.choices[0].message;
+    return "content" in message ? message.content : false;
+  }
+  return false;
 }

@@ -18,7 +18,6 @@ import { useQuestions } from "./hooks/useQuestions";
 import { v4 as uuidv4 } from "uuid";
 import { Question } from "./types/question";
 import { isValidQuestionPrompt } from "./utils/chat";
-import { formatFullTime } from "./utils/date/time";
 import { ChatPreferences } from "./types/preferences";
 
 interface ChatProps {
