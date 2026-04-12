@@ -15,8 +15,8 @@ import {
 import { generateStreamedResponse } from "./api/openrouter";
 import { POPULAR_MODELS } from "./api/models";
 import { useModelSearch } from "./hooks/useModelSearch";
-import { useConversations } from "./hooks/useConversations";
 import { useQuestions } from "./hooks/useQuestions";
+import { addConversation } from "./utils/conversations";
 import { v4 as uuidv4 } from "uuid";
 import { Question } from "./types/question";
 import { isValidQuestionPrompt } from "./utils/chat";
@@ -49,7 +49,6 @@ export default function AskQuestion({ conversationId }: ChatProps) {
   const [isAskingQuestion, setIsAskingQuestion] = useState<boolean>(false);
   const [isFirstQuestion, setIsFirstQuestion] = useState<boolean>(!conversationId);
 
-  const { add: addConversation } = useConversations();
   const {
     isLoading: isLoadingQuestions,
     getByConversationId,
