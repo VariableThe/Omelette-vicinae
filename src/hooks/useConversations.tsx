@@ -1,11 +1,12 @@
 import { LocalStorage, showToast, Toast } from "@raycast/api";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Conversation } from "../types/conversation";
 import { useQuestions } from "./useQuestions";
+import { useMountEffect } from "./useMountEffect";
 
 export function useConversations() {
-  const [data, setData] = useState<Conversation[]>([]);
-  const [isLoading, setLoading] = useState<boolean>(true);
+  const [rawData, setRawData] = useState<Conversation[]>([]);
+  const [isRawLoaded, setIsRawLoaded] = useState(false);
   const {
     isLoading: isLoadingQuestions,
     getByConversationId: getQuestionsByConversationId,
@@ -13,29 +14,25 @@ export function useConversations() {
     refresh: refreshQuestions,
   } = useQuestions();
 
-  useEffect(() => {
-    if (isLoadingQuestions) {
-      return;
-    }
-
+  useMountEffect(() => {
     (async () => {
       const stored = await LocalStorage.getItem<string>("conversations");
       if (stored) {
-        // Default conversations stored without questions
         const items: Conversation[] = JSON.parse(stored);
-        const sortedItems = items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-        // Enrich conversations with questions
-        const enrichedItems = sortedItems.map((conversation) => ({
-          ...conversation,
-          questions: getQuestionsByConversationId(conversation.id),
-        }));
-
-        setData(enrichedItems);
+        setRawData(items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
       }
-      setLoading(false);
+      setIsRawLoaded(true);
     })();
-  }, [isLoadingQuestions]);
+  });
+
+  // Derived state (Rule 1): enrich conversations with questions inline
+  const isLoading = !isRawLoaded || isLoadingQuestions;
+  const data = isLoading
+    ? []
+    : rawData.map((conversation) => ({
+        ...conversation,
+        questions: getQuestionsByConversationId(conversation.id),
+      }));
 
   const saveToLocalStorage = async (conversations: Conversation[]) => {
     try {
@@ -51,44 +48,39 @@ export function useConversations() {
 
   const add = useCallback(
     async (conversation: Conversation) => {
-      setLoading(true);
       const toast = await showToast({
         title: "Creating conversation...",
         style: Toast.Style.Animated,
       });
-      const newData = [...data, conversation];
+      const newData = [...rawData, conversation];
       await saveToLocalStorage(newData);
-      setData(newData);
+      setRawData(newData);
 
       toast.title = "Conversation created!";
       toast.style = Toast.Style.Success;
-      setLoading(false);
     },
-    [data],
+    [rawData],
   );
 
   const update = useCallback(
     async (conversation: Conversation) => {
-      setLoading(true);
       const toast = await showToast({
         title: "Updating Conversation...",
         style: Toast.Style.Animated,
       });
 
-      const newData = data.map((c) => (c.id === conversation.id ? conversation : c));
+      const newData = rawData.map((c) => (c.id === conversation.id ? conversation : c));
       await saveToLocalStorage(newData);
-      setData(newData);
+      setRawData(newData);
 
       toast.title = "Conversation updated!";
       toast.style = Toast.Style.Success;
-      setLoading(false);
     },
-    [data],
+    [rawData],
   );
 
   const remove = useCallback(
     async (conversation: Conversation) => {
-      setLoading(true);
       const toast = await showToast({
         title: "Removing conversation...",
         style: Toast.Style.Animated,
@@ -99,9 +91,9 @@ export function useConversations() {
         await removeQuestionByConversationId(conversation.id);
 
         // Remove conversation
-        const newData = data.filter((q) => q.id !== conversation.id);
+        const newData = rawData.filter((q) => q.id !== conversation.id);
         await saveToLocalStorage(newData);
-        setData(newData);
+        setRawData(newData);
 
         toast.title = "Conversation removed!";
         toast.style = Toast.Style.Success;
@@ -109,42 +101,30 @@ export function useConversations() {
         console.error("Error removing conversation:", error);
         toast.title = "Failed to remove conversation";
         toast.style = Toast.Style.Failure;
-      } finally {
-        setLoading(false);
       }
     },
-    [data],
+    [rawData],
   );
 
   const refresh = useCallback(async () => {
-    setLoading(true);
     try {
       const stored = await LocalStorage.getItem<string>("conversations");
 
       if (stored) {
-        // Default conversations stored without questions
         const items: Conversation[] = JSON.parse(stored);
         const sortedItems = items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
         // Refresh questions hook in order to fetch latest enrichedItems
         await refreshQuestions();
 
-        // Enrich conversations with questions
-        const enrichedItems = sortedItems.map((conversation) => ({
-          ...conversation,
-          questions: getQuestionsByConversationId(conversation.id),
-        }));
-
-        setData(enrichedItems);
+        setRawData(sortedItems);
       } else {
         console.error("Error refreshing conversations: No conversations found.");
       }
     } catch (error) {
       console.error("Error refreshing conversations:", error);
-    } finally {
-      setLoading(false);
     }
-  }, [getQuestionsByConversationId]);
+  }, [refreshQuestions]);
 
   return useMemo(
     () => ({ data, isLoading, add, update, remove, refresh }),

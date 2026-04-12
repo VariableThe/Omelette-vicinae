@@ -1,12 +1,13 @@
 import { LocalStorage, showToast, Toast } from "@raycast/api";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Question } from "../types/question";
+import { useMountEffect } from "./useMountEffect";
 
 export function useQuestions() {
   const [data, setData] = useState<Question[]>([]);
   const [isLoading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
+  useMountEffect(() => {
     (async () => {
       const stored = await LocalStorage.getItem<string>("questions");
       if (stored) {
@@ -14,7 +15,7 @@ export function useQuestions() {
       }
       setLoading(false);
     })();
-  }, []);
+  });
 
   const saveToLocalStorage = async (questions: Question[]) => {
     try {

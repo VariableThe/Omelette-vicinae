@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Detail,
   getSelectedText,
@@ -13,6 +13,7 @@ import {
 import { generateStreamedResponse } from "../api/openrouter";
 import { v4 as uuidv4 } from "uuid";
 import { Question } from "../types/question";
+import { useMountEffect } from "../hooks/useMountEffect";
 
 interface QuickAIProps {
   prompt: string;
@@ -24,7 +25,7 @@ export function QuickAI({ prompt, title }: QuickAIProps) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const preferences = getPreferenceValues<Preferences>();
 
-  useEffect(() => {
+  useMountEffect(() => {
     const controller = new AbortController();
     let mounted = true;
 
@@ -80,7 +81,7 @@ export function QuickAI({ prompt, title }: QuickAIProps) {
       mounted = false;
       controller.abort();
     };
-  }, [prompt, preferences.defaultModel]);
+  });
 
   return (
     <Detail

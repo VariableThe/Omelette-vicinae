@@ -3,7 +3,18 @@
   "extends": ["@raycast"],
   "rules": {
     "no-unused-vars": "off",
-    "@typescript-eslint/no-unused-vars": "warn"
-
+    "@typescript-eslint/no-unused-vars": "warn",
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "react",
+            "importNames": ["useEffect"],
+            "message": "useEffect is banned. Use useMountEffect from src/hooks/useMountEffect.ts for mount-only effects. See NO_USE_EFFECT.md for rationale."
+          }
+        ]
+      }
+    ]
   }
 }
