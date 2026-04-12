@@ -198,7 +198,7 @@ export default function AskQuestion({ conversationId }: ChatProps) {
       {!isConfigured ? (
         <List.EmptyView
           title="Configuration Required"
-          description="Please set your OpenRouter API Key and Model ID in preferences."
+          description="Please set your OpenRouter API Key and Model ID in preferences for Omelette."
           icon={Icon.Gear}
           actions={
             <ActionPanel>

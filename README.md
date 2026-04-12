@@ -1,6 +1,6 @@
-# OpenRouter for Raycast
+# Omelette for Raycast
 
-Access any AI model supported by OpenRouter directly within Raycast. This extension provides a native interface for interacting with large language models like GPT-5.4, Claude Sonnet 4.6, and NVIDIA Nemotron 3 Super, featuring real-time streaming and local conversation persistence.
+Access any AI model supported by OpenRouter directly within Raycast with Omelette. This extension provides a native interface for interacting with large language models like Claude 3.5 Sonnet, GPT-4o, and Llama 3.1, featuring real-time streaming, local conversation persistence, and powerful quick actions.
 
 Use [ORCA](https://orca.orb.town) to see listings for Openrouter models and Providers.
 

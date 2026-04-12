@@ -34,7 +34,7 @@ export async function generateStreamedResponse(
         Authorization: `Bearer ${preferences.openrouterApiKey}`,
         "Content-Type": "application/json",
         "HTTP-Referer": "https://raycast.com",
-        "X-Title": "OpenRouter",
+        "X-Title": "Omelette",
       },
       body: JSON.stringify({
         model: activeModelId,
@@ -47,7 +47,7 @@ export async function generateStreamedResponse(
 
     if (!response.ok) {
       const errorText = await response.text();
-      let errorMessage = `OpenRouter Error ${response.status}: ${response.statusText}`;
+      let errorMessage = `Omelette Error ${response.status}: ${response.statusText}`;
       try {
         const errorData = JSON.parse(errorText);
         errorMessage = errorData.error?.message || errorData.error || errorMessage;
@@ -123,7 +123,7 @@ export async function generateResponse(prompt: string, modelId?: string): Promis
       Authorization: `Bearer ${preferences.openrouterApiKey}`,
       "Content-Type": "application/json",
       "HTTP-Referer": "https://raycast.com",
-      "X-Title": "OpenRouter",
+      "X-Title": "Omelette",
     },
     body: JSON.stringify({
       model: activeModelId,
