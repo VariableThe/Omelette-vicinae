@@ -1,12 +1,12 @@
 import { LocalStorage, showToast, Toast } from "@raycast/api";
-import { useState, useCallback, useMemo } from "react";
+// eslint-disable-next-line no-restricted-imports
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Conversation } from "../types/conversation";
 import { useQuestions } from "./useQuestions";
-import { useMountEffect } from "./useMountEffect";
 
 export function useConversations() {
-  const [rawData, setRawData] = useState<Conversation[]>([]);
-  const [isRawLoaded, setIsRawLoaded] = useState(false);
+  const [data, setData] = useState<Conversation[]>([]);
+  const [isLoading, setLoading] = useState<boolean>(true);
   const {
     isLoading: isLoadingQuestions,
     getByConversationId: getQuestionsByConversationId,
@@ -14,34 +14,36 @@ export function useConversations() {
     refresh: refreshQuestions,
   } = useQuestions();
 
-  useMountEffect(() => {
+  // Exception to no-useEffect policy: this hook genuinely needs to react
+  // to isLoadingQuestions changing. The original useEffect pattern is the
+  // correct primitive here — derived state via useMemo causes render loops
+  // due to cascading memo invalidation between useQuestions and this hook.
+  useEffect(() => {
+    if (isLoadingQuestions) {
+      return;
+    }
+
     (async () => {
       try {
         const stored = await LocalStorage.getItem<string>("conversations");
         if (stored) {
           const items: Conversation[] = JSON.parse(stored);
-          setRawData(items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+          const sortedItems = items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+          const enrichedItems = sortedItems.map((conversation) => ({
+            ...conversation,
+            questions: getQuestionsByConversationId(conversation.id),
+          }));
+
+          setData(enrichedItems);
         }
       } catch (error) {
         console.error("Failed to load conversations from localStorage:", error);
       } finally {
-        setIsRawLoaded(true);
+        setLoading(false);
       }
     })();
-  });
-
-  // Derived state (Rule 1): enrich conversations with questions inline
-  const isLoading = !isRawLoaded || isLoadingQuestions;
-  const data = useMemo(
-    () =>
-      isLoading
-        ? []
-        : rawData.map((conversation) => ({
-            ...conversation,
-            questions: getQuestionsByConversationId(conversation.id),
-          })),
-    [isLoading, rawData, getQuestionsByConversationId],
-  );
+  }, [isLoadingQuestions]);
 
   const saveToLocalStorage = async (conversations: Conversation[]) => {
     try {
@@ -57,52 +59,55 @@ export function useConversations() {
 
   const add = useCallback(
     async (conversation: Conversation) => {
+      setLoading(true);
       const toast = await showToast({
         title: "Creating conversation...",
         style: Toast.Style.Animated,
       });
-      const newData = [...rawData, conversation];
+      const newData = [...data, conversation];
       await saveToLocalStorage(newData);
-      setRawData(newData);
+      setData(newData);
 
       toast.title = "Conversation created!";
       toast.style = Toast.Style.Success;
+      setLoading(false);
     },
-    [rawData],
+    [data],
   );
 
   const update = useCallback(
     async (conversation: Conversation) => {
+      setLoading(true);
       const toast = await showToast({
         title: "Updating Conversation...",
         style: Toast.Style.Animated,
       });
 
-      const newData = rawData.map((c) => (c.id === conversation.id ? conversation : c));
+      const newData = data.map((c) => (c.id === conversation.id ? conversation : c));
       await saveToLocalStorage(newData);
-      setRawData(newData);
+      setData(newData);
 
       toast.title = "Conversation updated!";
       toast.style = Toast.Style.Success;
+      setLoading(false);
     },
-    [rawData],
+    [data],
   );
 
   const remove = useCallback(
     async (conversation: Conversation) => {
+      setLoading(true);
       const toast = await showToast({
         title: "Removing conversation...",
         style: Toast.Style.Animated,
       });
 
       try {
-        // Remove all questions in conversation
         await removeQuestionByConversationId(conversation.id);
 
-        // Remove conversation
-        const newData = rawData.filter((q) => q.id !== conversation.id);
+        const newData = data.filter((q) => q.id !== conversation.id);
         await saveToLocalStorage(newData);
-        setRawData(newData);
+        setData(newData);
 
         toast.title = "Conversation removed!";
         toast.style = Toast.Style.Success;
@@ -110,12 +115,15 @@ export function useConversations() {
         console.error("Error removing conversation:", error);
         toast.title = "Failed to remove conversation";
         toast.style = Toast.Style.Failure;
+      } finally {
+        setLoading(false);
       }
     },
-    [rawData],
+    [data],
   );
 
   const refresh = useCallback(async () => {
+    setLoading(true);
     try {
       const stored = await LocalStorage.getItem<string>("conversations");
 
@@ -123,17 +131,23 @@ export function useConversations() {
         const items: Conversation[] = JSON.parse(stored);
         const sortedItems = items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-        // Refresh questions hook in order to fetch latest enrichedItems
         await refreshQuestions();
 
-        setRawData(sortedItems);
+        const enrichedItems = sortedItems.map((conversation) => ({
+          ...conversation,
+          questions: getQuestionsByConversationId(conversation.id),
+        }));
+
+        setData(enrichedItems);
       } else {
         console.error("Error refreshing conversations: No conversations found.");
       }
     } catch (error) {
       console.error("Error refreshing conversations:", error);
+    } finally {
+      setLoading(false);
     }
-  }, [refreshQuestions]);
+  }, [getQuestionsByConversationId]);
 
   return useMemo(
     () => ({ data, isLoading, add, update, remove, refresh }),
