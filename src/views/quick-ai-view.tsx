@@ -25,18 +25,23 @@ export function QuickAI({ prompt, title }: QuickAIProps) {
   const preferences = getPreferenceValues<Preferences>();
 
   useEffect(() => {
+    const controller = new AbortController();
+    let mounted = true;
+
     async function runAction() {
       try {
         let selectedText = "";
         try {
           selectedText = await getSelectedText();
         } catch (error) {
+          const message =
+            error instanceof Error ? error.message : "Please select some text before running this command.";
           showToast({
             style: Toast.Style.Failure,
-            title: "No text selected",
-            message: "Please select some text before running this command.",
+            title: "Unable to read selected text",
+            message,
           });
-          setIsLoading(false);
+          if (mounted) setIsLoading(false);
           return;
         }
 
@@ -53,24 +58,29 @@ export function QuickAI({ prompt, title }: QuickAIProps) {
           [question],
           question.id,
           (partialOutput) => {
-            setOutput(partialOutput);
+            if (mounted) setOutput(partialOutput);
           },
-          undefined,
+          controller.signal,
           preferences.defaultModel,
         );
       } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") return;
         showToast({
           style: Toast.Style.Failure,
           title: "Error",
           message: error instanceof Error ? error.message : "An unknown error occurred",
         });
       } finally {
-        setIsLoading(false);
+        if (mounted) setIsLoading(false);
       }
     }
 
     runAction();
-  }, [prompt]);
+    return () => {
+      mounted = false;
+      controller.abort();
+    };
+  }, [prompt, preferences.defaultModel]);
 
   return (
     <Detail
