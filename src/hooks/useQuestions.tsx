@@ -9,11 +9,16 @@ export function useQuestions() {
 
   useMountEffect(() => {
     (async () => {
-      const stored = await LocalStorage.getItem<string>("questions");
-      if (stored) {
-        setData(JSON.parse(stored));
+      try {
+        const stored = await LocalStorage.getItem<string>("questions");
+        if (stored) {
+          setData(JSON.parse(stored));
+        }
+      } catch (error) {
+        console.error("Failed to load questions from localStorage:", error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     })();
   });
 

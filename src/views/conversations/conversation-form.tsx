@@ -26,6 +26,14 @@ export default function ConversationForm({ conversationId }: ConversationFormPro
     );
   }
 
+  if (!conversation) {
+    return (
+      <Form>
+        <Form.Description title="Conversation" text="Conversation not found." />
+      </Form>
+    );
+  }
+
   // Rule 4: mount the real form only when data is ready
   return <ConversationFormReady conversation={conversation} updateConversation={updateConversation} pop={pop} />;
 }
@@ -47,7 +55,11 @@ function ConversationFormReady({ conversation, updateConversation, pop }: Conver
       setIsLoading(true);
       try {
         if (conversation) {
-          await updateConversation({ ...conversation, title: values.title });
+          await updateConversation({
+            id: conversation.id,
+            createdAt: conversation.createdAt,
+            title: values.title,
+          });
         }
         pop();
       } catch (error) {

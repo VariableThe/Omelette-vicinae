@@ -16,12 +16,17 @@ export function useConversations() {
 
   useMountEffect(() => {
     (async () => {
-      const stored = await LocalStorage.getItem<string>("conversations");
-      if (stored) {
-        const items: Conversation[] = JSON.parse(stored);
-        setRawData(items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      try {
+        const stored = await LocalStorage.getItem<string>("conversations");
+        if (stored) {
+          const items: Conversation[] = JSON.parse(stored);
+          setRawData(items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+        }
+      } catch (error) {
+        console.error("Failed to load conversations from localStorage:", error);
+      } finally {
+        setIsRawLoaded(true);
       }
-      setIsRawLoaded(true);
     })();
   });
 

@@ -11,7 +11,7 @@
           {
             "name": "react",
             "importNames": ["useEffect"],
-            "message": "useEffect is banned. Use useMountEffect from src/hooks/useMountEffect.ts for mount-only effects. See NO_USE_EFFECT.md for rationale."
+            "message": "useEffect is banned. Use useMountEffect from src/hooks/useMountEffect.ts for mount-only effects. See agents.md for rationale."
           }
         ]
       }
