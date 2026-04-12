@@ -32,12 +32,16 @@ export function useConversations() {
 
   // Derived state (Rule 1): enrich conversations with questions inline
   const isLoading = !isRawLoaded || isLoadingQuestions;
-  const data = isLoading
-    ? []
-    : rawData.map((conversation) => ({
-        ...conversation,
-        questions: getQuestionsByConversationId(conversation.id),
-      }));
+  const data = useMemo(
+    () =>
+      isLoading
+        ? []
+        : rawData.map((conversation) => ({
+            ...conversation,
+            questions: getQuestionsByConversationId(conversation.id),
+          })),
+    [isLoading, rawData, getQuestionsByConversationId],
+  );
 
   const saveToLocalStorage = async (conversations: Conversation[]) => {
     try {
