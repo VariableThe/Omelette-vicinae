@@ -1,5 +1,5 @@
 import { LocalStorage, showToast, Toast } from "@raycast/api";
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Question } from "../types/question";
 import { useMountEffect } from "./useMountEffect";
 
@@ -136,14 +136,12 @@ export function useQuestions() {
     }
   }, []);
 
-  // Ref-stable callback: reads latest data without changing identity.
-  // Prevents render cascades in useConversations which uses this as a memo dep.
-  const dataRef = useRef(data);
-  dataRef.current = data;
-
-  const getByConversationId = useCallback((conversationId: string) => {
-    return dataRef.current.filter((q) => q.conversationId === conversationId);
-  }, []);
+  const getByConversationId = useCallback(
+    (conversationId: string) => {
+      return data.filter((q) => q.conversationId === conversationId);
+    },
+    [data],
+  );
 
   const refresh = useCallback(async () => {
     setLoading(true);
