@@ -74,14 +74,14 @@ export async function generateStreamedResponse(
 
         buffer += decoder.decode(value, { stream: true });
         const lines = buffer.split("\n");
-        
+
         // Keep the last partial line in the buffer
         buffer = lines.pop() || "";
 
         for (const line of lines) {
           const trimmedLine = line.trim();
           if (!trimmedLine) continue;
-          
+
           if (trimmedLine.startsWith("data: ")) {
             const rawLine = trimmedLine.slice(6).trim();
             if (rawLine === "[DONE]") {
