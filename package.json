@@ -91,6 +91,8 @@
     "@typescript-eslint/parser": "^5.0.0",
     "eslint": "^7.32.0",
     "eslint-config-prettier": "^8.3.0",
+    "oxfmt": "^0.44.0",
+    "oxlint": "^1.59.0",
     "prettier": "^3.4.2",
     "typescript": "^5.7.3"
   },
@@ -102,6 +104,9 @@
     "dev": "ray develop",
     "fix-lint": "ray lint --fix",
     "lint": "ray lint",
+    "lint:ox": "oxlint -c .oxlintrc.json src/",
+    "fmt": "oxfmt --write src/",
+    "fmt:check": "oxfmt --check src/",
     "publish": "npx @raycast/api@latest publish"
   }
 }

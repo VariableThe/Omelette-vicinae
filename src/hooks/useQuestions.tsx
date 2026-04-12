@@ -1,20 +1,26 @@
 import { LocalStorage, showToast, Toast } from "@raycast/api";
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Question } from "../types/question";
+import { useMountEffect } from "./useMountEffect";
 
 export function useQuestions() {
   const [data, setData] = useState<Question[]>([]);
   const [isLoading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
+  useMountEffect(() => {
     (async () => {
-      const stored = await LocalStorage.getItem<string>("questions");
-      if (stored) {
-        setData(JSON.parse(stored));
+      try {
+        const stored = await LocalStorage.getItem<string>("questions");
+        if (stored) {
+          setData(JSON.parse(stored));
+        }
+      } catch (error) {
+        console.error("Failed to load questions from localStorage:", error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     })();
-  }, []);
+  });
 
   const saveToLocalStorage = async (questions: Question[]) => {
     try {
