@@ -14,6 +14,7 @@ import {
 } from "@raycast/api";
 import { generateStreamedResponse } from "./api/openrouter";
 import { POPULAR_MODELS } from "./api/models";
+import { useModelSearch } from "./hooks/useModelSearch";
 import { useConversations } from "./hooks/useConversations";
 import { useQuestions } from "./hooks/useQuestions";
 import { v4 as uuidv4 } from "uuid";
@@ -33,6 +34,7 @@ export default function AskQuestion({ conversationId }: ChatProps) {
   }, [preferences]);
 
   const [selectedModel, setSelectedModel] = useState<string>(preferences.defaultModel);
+  const { searchResults, isSearching, searchModels } = useModelSearch();
 
   const [searchQuestion, setSearchQuestion] = useState<Question>({
     id: uuidv4(),
@@ -181,16 +183,31 @@ export default function AskQuestion({ conversationId }: ChatProps) {
           storeValue={true}
           onChange={(newValue) => setSelectedModel(newValue)}
           defaultValue={selectedModel}
+          filtering={false}
+          isLoading={isSearching}
+          onSearchTextChange={searchModels}
+          throttle={true}
+          placeholder="Search models..."
         >
-          <List.Dropdown.Section title="Popular Models">
-            {POPULAR_MODELS.map((model) => (
-              <List.Dropdown.Item key={model.id} title={model.name} value={model.id} />
-            ))}
-          </List.Dropdown.Section>
-          {!POPULAR_MODELS.find((m) => m.id === preferences.defaultModel) && (
-            <List.Dropdown.Section title="Custom Model (from settings)">
-              <List.Dropdown.Item title={preferences.defaultModel} value={preferences.defaultModel} />
+          {searchResults.length > 0 ? (
+            <List.Dropdown.Section title="Search Results">
+              {searchResults.map((model) => (
+                <List.Dropdown.Item key={model.id} title={model.name} value={model.id} />
+              ))}
             </List.Dropdown.Section>
+          ) : (
+            <>
+              <List.Dropdown.Section title="Popular Models">
+                {POPULAR_MODELS.map((model) => (
+                  <List.Dropdown.Item key={model.id} title={model.name} value={model.id} />
+                ))}
+              </List.Dropdown.Section>
+              {!POPULAR_MODELS.find((m) => m.id === preferences.defaultModel) && (
+                <List.Dropdown.Section title="Custom Model (from settings)">
+                  <List.Dropdown.Item title={preferences.defaultModel} value={preferences.defaultModel} />
+                </List.Dropdown.Section>
+              )}
+            </>
           )}
         </List.Dropdown>
       }
