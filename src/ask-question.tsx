@@ -13,6 +13,7 @@ import {
   openCommandPreferences,
 } from "@raycast/api";
 import { generateStreamedResponse } from "./api/openrouter";
+import { POPULAR_MODELS } from "./api/models";
 import { useConversations } from "./hooks/useConversations";
 import { useQuestions } from "./hooks/useQuestions";
 import { v4 as uuidv4 } from "uuid";
@@ -30,6 +31,8 @@ export default function AskQuestion({ conversationId }: ChatProps) {
   const isConfigured = useMemo(() => {
     return !!preferences.openrouterApiKey && !!preferences.defaultModel;
   }, [preferences]);
+
+  const [selectedModel, setSelectedModel] = useState<string>(preferences.defaultModel);
 
   const [searchQuestion, setSearchQuestion] = useState<Question>({
     id: uuidv4(),
@@ -96,6 +99,7 @@ export default function AskQuestion({ conversationId }: ChatProps) {
         question.id,
         handleStreamingOutput,
         abortController.signal,
+        selectedModel,
       );
       if (response) {
         await updateQuestion({ ...question, response, isStreaming: false });
@@ -171,6 +175,25 @@ export default function AskQuestion({ conversationId }: ChatProps) {
       isLoading={isLoadingQuestions}
       selectedItemId={selectedQuestionId ?? undefined}
       actions={renderActions()}
+      searchBarAccessory={
+        <List.Dropdown
+          tooltip="Select Model"
+          storeValue={true}
+          onChange={(newValue) => setSelectedModel(newValue)}
+          defaultValue={selectedModel}
+        >
+          <List.Dropdown.Section title="Popular Models">
+            {POPULAR_MODELS.map((model) => (
+              <List.Dropdown.Item key={model.id} title={model.name} value={model.id} />
+            ))}
+          </List.Dropdown.Section>
+          {!POPULAR_MODELS.find((m) => m.id === preferences.defaultModel) && (
+            <List.Dropdown.Section title="Custom Model (from settings)">
+              <List.Dropdown.Item title={preferences.defaultModel} value={preferences.defaultModel} />
+            </List.Dropdown.Section>
+          )}
+        </List.Dropdown>
+      }
     >
       {!isConfigured ? (
         <List.EmptyView

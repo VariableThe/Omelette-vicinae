@@ -9,9 +9,10 @@ export async function generateStreamedResponse(
   questionId: string,
   handleStreamingOutput: (output: string) => void,
   abortSignal?: AbortSignal,
+  modelId?: string,
 ): Promise<string | false> {
   const preferences = getPreferenceValues<Preferences>();
-  const modelId = (preferences.defaultModel ?? "meta-llama/llama-3.1-8b-instruct:free").trim();
+  const activeModelId = (modelId || preferences.defaultModel || "meta-llama/llama-3.1-8b-instruct:free").trim();
 
   try {
     const lastIndex = questions.map((q) => q.id).indexOf(questionId);
@@ -36,7 +37,7 @@ export async function generateStreamedResponse(
         "X-Title": "OpenRouter",
       },
       body: JSON.stringify({
-        model: modelId,
+        model: activeModelId,
         messages: messages,
         max_tokens: 1000,
         stream: true,
@@ -113,9 +114,9 @@ export async function generateStreamedResponse(
   }
 }
 
-export async function generateResponse(prompt: string): Promise<string | false> {
+export async function generateResponse(prompt: string, modelId?: string): Promise<string | false> {
   const preferences = getPreferenceValues<Preferences>();
-  const modelId = (preferences.defaultModel ?? "meta-llama/llama-3.1-8b-instruct:free").trim();
+  const activeModelId = (modelId || preferences.defaultModel || "meta-llama/llama-3.1-8b-instruct:free").trim();
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -125,9 +126,9 @@ export async function generateResponse(prompt: string): Promise<string | false> 
       "X-Title": "OpenRouter",
     },
     body: JSON.stringify({
-      model: modelId,
+      model: activeModelId,
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 100,
+      max_tokens: 1000,
       stream: false,
     }),
   });
