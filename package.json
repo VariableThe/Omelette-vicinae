@@ -23,6 +23,41 @@
       "subtitle": "OpenRouter",
       "description": "View and continue your previous conversations.",
       "mode": "view"
+    },
+    {
+      "name": "summarize",
+      "title": "Summarize",
+      "subtitle": "OpenRouter",
+      "description": "Summarize the selected text.",
+      "mode": "view"
+    },
+    {
+      "name": "improve-writing",
+      "title": "Improve Writing",
+      "subtitle": "OpenRouter",
+      "description": "Improve the writing of the selected text.",
+      "mode": "view"
+    },
+    {
+      "name": "fix-grammar",
+      "title": "Fix Grammar",
+      "subtitle": "OpenRouter",
+      "description": "Fix grammar and spelling of the selected text.",
+      "mode": "view"
+    },
+    {
+      "name": "translate",
+      "title": "Translate to English",
+      "subtitle": "OpenRouter",
+      "description": "Translate the selected text to English.",
+      "mode": "view"
+    },
+    {
+      "name": "custom-action",
+      "title": "Custom Quick AI",
+      "subtitle": "OpenRouter",
+      "description": "Run a custom AI prompt on the selected text.",
+      "mode": "view"
     }
   ],
   "preferences": [
