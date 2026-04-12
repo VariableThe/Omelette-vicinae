@@ -25,7 +25,7 @@ Visit [OpenRouter Keys](https://openrouter.ai/keys) to generate an API key.
 Enter the slug for the model you wish to use. You can find the full list of supported models at [openrouter.ai/models](https://openrouter.ai/models). Popular options include:
 - `anthropic/claude-sonnet-4.6`
 - `openai/gpt-5.4`
-- `meta-llama/llama-4-scout:free`
+- `nvidia/nemotron-3-nano-30b-a3b:free`
 - `nvidia/nemotron-3-super-120b-a12b:free`
 
 ### 3. Setup Steps

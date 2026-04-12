@@ -12,7 +12,7 @@ export async function generateStreamedResponse(
   modelId?: string,
 ): Promise<string | false> {
   const preferences = getPreferenceValues<Preferences>();
-  const activeModelId = modelId?.trim() || preferences.defaultModel?.trim() || "meta-llama/llama-3.1-8b-instruct:free";
+  const activeModelId = modelId?.trim() || preferences.defaultModel?.trim() || "nvidia/nemotron-3-nano-30b-a3b:free";
 
   try {
     const lastIndex = questions.map((q) => q.id).indexOf(questionId);
@@ -116,7 +116,7 @@ export async function generateStreamedResponse(
 
 export async function generateResponse(prompt: string, modelId?: string): Promise<string | false> {
   const preferences = getPreferenceValues<Preferences>();
-  const activeModelId = modelId?.trim() || preferences.defaultModel?.trim() || "meta-llama/llama-3.1-8b-instruct:free";
+  const activeModelId = modelId?.trim() || preferences.defaultModel?.trim() || "nvidia/nemotron-3-nano-30b-a3b:free";
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
