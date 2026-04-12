@@ -12,15 +12,13 @@ reviews:
   auto_review:
     enabled: true
     drafts: false
+  path_filters:
+    - "!node_modules/**"
+    - "!dist/**"
+    - "!package-lock.json"
+    - "!*.png"
+    - "!*.jpg"
+    - "!assets/**"
 
 chat:
-  enabled: true
-
-# Patterns to ignore during review
-ignore_paths:
-  - "node_modules/**"
-  - "dist/**"
-  - "package-lock.json"
-  - "*.png"
-  - "*.jpg"
-  - "assets/**"
+  auto_reply: true
