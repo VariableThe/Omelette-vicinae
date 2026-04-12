@@ -65,8 +65,10 @@ export async function generateStreamedResponse(
     // Iterate over the native ReadableStream
     const reader = stream.getReader();
     try {
-      while (true) {
-        const { done, value } = await reader.read();
+      let done = false;
+      while (!done) {
+        const { done: readerDone, value } = await reader.read();
+        done = readerDone;
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
