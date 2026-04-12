@@ -39,7 +39,7 @@ export async function generateStreamedResponse(
       body: JSON.stringify({
         model: activeModelId,
         messages: messages,
-        max_tokens: 1000,
+        max_tokens: 4096,
         stream: true,
       }),
       signal: abortSignal,
@@ -128,7 +128,7 @@ export async function generateResponse(prompt: string, modelId?: string): Promis
     body: JSON.stringify({
       model: activeModelId,
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 1000,
+      max_tokens: 4096,
       stream: false,
     }),
   });
