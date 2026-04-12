@@ -1,5 +1,7 @@
 # OpenRouter for Raycast
 
+<img src="assets/openrouter-logo.svg" width="80" height="80" alt="OpenRouter Logo">
+
 Access any AI model supported by OpenRouter directly within Raycast. This extension provides a native interface for interacting with large language models like GPT-4o, Claude 3.5 Sonnet, and Llama 3.1, featuring real-time streaming and local conversation persistence.
 
 ![Chat Interface](assets/1-chat.png)
