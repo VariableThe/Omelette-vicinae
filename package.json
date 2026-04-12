@@ -71,10 +71,10 @@
     {
       "name": "defaultModel",
       "type": "textfield",
-      "default": "meta-llama/llama-3.1-8b-instruct:free",
+      "default": "nvidia/nemotron-3-nano-30b-a3b:free",
       "required": true,
       "title": "Default Model ID",
-      "description": "Example: meta-llama/llama-3.1-8b-instruct:free or openai/gpt-4o-mini"
+      "description": "Example: nvidia/nemotron-3-nano-30b-a3b:free or openai/gpt-5.4"
     }
   ],
   "dependencies": {
