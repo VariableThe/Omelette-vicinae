@@ -40,8 +40,8 @@ export function useQuestions() {
         title: "Saving question...",
         style: Toast.Style.Animated,
       });
-      const newData = [question, ...data]; // Use the current state directly
-      setData(newData); // Update state optimistically
+      const newData = [question, ...data];
+      setData((prev) => [question, ...prev]);
       try {
         await saveToLocalStorage(newData); // Save to LocalStorage
         toast.title = "Question saved!";
@@ -75,10 +75,6 @@ export function useQuestions() {
       toast.title = "Question updated!";
       toast.style = Toast.Style.Success;
     }
-  }, []);
-
-  const updateLocally = useCallback((id: string, response: string) => {
-    setData((prev) => prev.map((q) => (q.id === id ? { ...q, response } : q)));
   }, []);
 
   // TODO: fix to align with `add`
@@ -168,7 +164,6 @@ export function useQuestions() {
       isLoading,
       add,
       update,
-      updateLocally,
       remove,
       removeByConversationId,
       getByConversationId,
@@ -180,7 +175,6 @@ export function useQuestions() {
       isLoading,
       add,
       update,
-      updateLocally,
       remove,
       removeByConversationId,
       getByConversationId,

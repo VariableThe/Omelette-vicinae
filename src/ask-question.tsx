@@ -54,12 +54,21 @@ export default function AskQuestion({ conversationId }: ChatProps) {
     getByConversationId,
     add: addQuestion,
     update: updateQuestion,
-    updateLocally,
     remove: removeQuestion,
     refresh: refreshQuestions,
   } = useQuestions();
 
-  const questions = getByConversationId(searchQuestion.conversationId);
+  const hookQuestions = getByConversationId(searchQuestion.conversationId);
+  const [localQuestions, setLocalQuestions] = useState<Question[]>([]);
+  
+  // Sync local questions when hook questions load initially
+  useMemo(() => {
+    if (localQuestions.length === 0 && hookQuestions.length > 0) {
+      setLocalQuestions(hookQuestions);
+    }
+  }, [hookQuestions]);
+
+  const questions = localQuestions.length > 0 ? localQuestions : hookQuestions;
   const [abortController, setAbortController] = useState<AbortController | null>(null);
 
   const handleAskQuestion = async (question: Question) => {
@@ -79,6 +88,7 @@ export default function AskQuestion({ conversationId }: ChatProps) {
     setAbortController(abortController);
 
     const allQuestions = [question, ...questions].reverse();
+    setLocalQuestions((prev) => [question, ...(prev.length > 0 ? prev : questions)]);
     await addQuestion(question);
     setSelectedQuestionId(question.id);
 
@@ -93,7 +103,7 @@ export default function AskQuestion({ conversationId }: ChatProps) {
     try {
       const handleStreamingOutput = (output: string) => {
         setOutput(output);
-        updateLocally(question.id, output);
+        setLocalQuestions((prev) => prev.map((q) => (q.id === question.id ? { ...q, response: output } : q)));
       };
 
       const response = await generateStreamedResponse(
@@ -108,6 +118,7 @@ export default function AskQuestion({ conversationId }: ChatProps) {
       }
     } catch (error) {
       // If an error or abort happens, we should save the partial state and stop streaming
+      setLocalQuestions((prev) => prev.map((q) => (q.id === question.id ? { ...q, response: output, isStreaming: false } : q)));
       updateQuestion({ ...question, response: output, isStreaming: false });
       
       if (error instanceof Error && error.name === "AbortError") {
