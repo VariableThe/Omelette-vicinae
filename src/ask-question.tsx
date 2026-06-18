@@ -1,17 +1,18 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   Action,
   ActionPanel,
-  confirmAlert,
   Icon,
   Keyboard,
   List,
+  Detail,
   showToast,
   Toast,
   useNavigation,
   getPreferenceValues,
   openCommandPreferences,
-} from "@raycast/api";
+  clearSearchBar,
+} from "@vicinae/api";
 import { generateStreamedResponse } from "./api/openrouter";
 import { POPULAR_MODELS } from "./api/models";
 import { useModelSearch } from "./hooks/useModelSearch";
@@ -20,6 +21,125 @@ import { addConversation } from "./utils/conversations";
 import { v4 as uuidv4 } from "uuid";
 import { Question } from "./types/question";
 import { isValidQuestionPrompt } from "./utils/chat";
+
+function ConversationDetailView({
+  conversationId,
+  initialQuestionPrompt,
+  selectedModel,
+  isFirstQuestion,
+  onStartNew,
+}: {
+  conversationId: string;
+  initialQuestionPrompt?: string;
+  selectedModel: string;
+  isFirstQuestion: boolean;
+  onStartNew: () => void;
+}) {
+  const { pop } = useNavigation();
+  const { getByConversationId, add: addQuestion, update: updateQuestion } = useQuestions();
+
+  const [output, setOutput] = useState<string>("");
+  const [isGenerating, setIsGenerating] = useState<boolean>(!!initialQuestionPrompt);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
+
+  const existingQuestions = getByConversationId(conversationId);
+  const [questions, setQuestions] = useState<Question[]>(existingQuestions);
+
+  useEffect(() => {
+    if (!initialQuestionPrompt) return;
+
+    const run = async () => {
+      const newQuestion: Question = {
+        id: uuidv4(),
+        conversationId,
+        prompt: initialQuestionPrompt,
+        response: "",
+        createdAt: new Date().toISOString(),
+        isStreaming: true,
+      };
+
+      if (isFirstQuestion) {
+        await addConversation({
+          id: conversationId,
+          title: initialQuestionPrompt.substring(0, 50),
+          createdAt: new Date().toISOString(),
+        });
+      }
+
+      await addQuestion(newQuestion);
+      setQuestions((prev) => [newQuestion, ...prev]);
+
+      const controller = new AbortController();
+      setAbortController(controller);
+
+      try {
+        const response = await generateStreamedResponse(
+          [newQuestion, ...existingQuestions].reverse(),
+          newQuestion.id,
+          (chunk) => {
+            setOutput(chunk);
+          },
+          controller.signal,
+          selectedModel,
+        );
+
+        if (response) {
+          await updateQuestion({ ...newQuestion, response, isStreaming: false });
+          setQuestions((prev) =>
+            prev.map((q) => (q.id === newQuestion.id ? { ...q, response, isStreaming: false } : q))
+          );
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          setOutput((prevOutput) => {
+            updateQuestion({ ...newQuestion, response: prevOutput, isStreaming: false });
+            setQuestions((prev) =>
+              prev.map((q) => (q.id === newQuestion.id ? { ...q, response: prevOutput, isStreaming: false } : q))
+            );
+            return prevOutput;
+          });
+          return;
+        }
+        showToast({ style: Toast.Style.Failure, title: "Error", message: String(error) });
+      } finally {
+        setIsGenerating(false);
+        setAbortController(null);
+      }
+    };
+    run();
+  }, [initialQuestionPrompt]);
+
+  const markdown = [...questions].reverse().map((q) => {
+    const isCurrent = isGenerating && q.id === questions[0]?.id;
+    return `### You\n${q.prompt}\n\n### AI\n${isCurrent ? output : q.response}\n\n---\n`;
+  }).join("\n");
+
+  return (
+    <Detail
+      markdown={markdown || "No conversation history."}
+      isLoading={isGenerating}
+      actions={
+        <ActionPanel>
+          <Action title="Ask Follow-Up" icon={Icon.Message} onAction={() => pop()} />
+          {isGenerating ? (
+            <Action title="Stop Generating" icon={Icon.Stop} onAction={() => abortController?.abort()} />
+          ) : (
+            <Action
+              title="Start New Chat"
+              icon={Icon.Plus}
+              shortcut={Keyboard.Shortcut.Common.New}
+              onAction={() => {
+                onStartNew();
+                pop();
+              }}
+            />
+          )}
+          <Action.CopyToClipboard title="Copy Conversation" content={markdown} />
+        </ActionPanel>
+      }
+    />
+  );
+}
 
 interface ChatProps {
   conversationId?: string;
@@ -36,162 +156,65 @@ export default function AskQuestion({ conversationId }: ChatProps) {
   const [selectedModel, setSelectedModel] = useState<string>(preferences.defaultModel);
   const { searchResults, isSearching, searchModels } = useModelSearch();
 
-  const [searchQuestion, setSearchQuestion] = useState<Question>({
-    id: uuidv4(),
-    conversationId: conversationId ?? uuidv4(),
-    prompt: "",
-    response: "",
-    createdAt: new Date().toISOString(),
-    isStreaming: true,
-  });
-  const [output, setOutput] = useState<string>("");
-  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
-  const [isAskingQuestion, setIsAskingQuestion] = useState<boolean>(false);
-  const [isFirstQuestion, setIsFirstQuestion] = useState<boolean>(!conversationId);
+  const [activeConversationId, setActiveConversationId] = useState<string>(conversationId ?? uuidv4());
+  const [searchText, setSearchText] = useState<string>("");
 
-  const {
-    isLoading: isLoadingQuestions,
-    getByConversationId,
-    add: addQuestion,
-    update: updateQuestion,
-    remove: removeQuestion,
-    refresh: refreshQuestions,
-  } = useQuestions();
-
-  const hookQuestions = getByConversationId(searchQuestion.conversationId);
-  const [localQuestions, setLocalQuestions] = useState<Question[]>([]);
+  const { isLoading: isLoadingQuestions, getByConversationId } = useQuestions();
+  const activeQuestions = getByConversationId(activeConversationId);
   
-  // Sync local questions when hook questions load initially
-  useMemo(() => {
-    if (localQuestions.length === 0 && hookQuestions.length > 0) {
-      setLocalQuestions(hookQuestions);
-    }
-  }, [hookQuestions]);
+  // Keep track of whether we've auto-pushed the detail view for this component mount
+  const hasAutoPushed = useRef(false);
 
-  const questions = localQuestions.length > 0 ? localQuestions : hookQuestions;
-  const [abortController, setAbortController] = useState<AbortController | null>(null);
-
-  const handleAskQuestion = async (question: Question) => {
-    if (!question.prompt) return;
-
-    if (isFirstQuestion) {
-      await addConversation({
-        id: conversationId ?? question.conversationId,
-        title: question.prompt.substring(0, 50),
-        createdAt: new Date().toISOString(),
-      });
-    }
-
-    setOutput("");
-    setIsAskingQuestion(true);
-    const abortController = new AbortController();
-    setAbortController(abortController);
-
-    const allQuestions = [question, ...questions].reverse();
-    setLocalQuestions((prev) => [question, ...(prev.length > 0 ? prev : questions)]);
-    await addQuestion(question);
-    setSelectedQuestionId(question.id);
-
-    setSearchQuestion((prev) => ({
-      ...prev,
-      id: uuidv4(),
-      prompt: "",
-      response: "",
-      createdAt: new Date().toISOString(),
-    }));
-
-    try {
-      const handleStreamingOutput = (output: string) => {
-        setOutput(output);
-        setLocalQuestions((prev) => prev.map((q) => (q.id === question.id ? { ...q, response: output } : q)));
-      };
-
-      const response = await generateStreamedResponse(
-        allQuestions,
-        question.id,
-        handleStreamingOutput,
-        abortController.signal,
-        selectedModel,
+  useEffect(() => {
+    if (activeQuestions.length > 0 && !hasAutoPushed.current) {
+      hasAutoPushed.current = true;
+      push(
+        <ConversationDetailView
+          conversationId={activeConversationId}
+          selectedModel={selectedModel}
+          isFirstQuestion={false}
+          onStartNew={() => {
+            setActiveConversationId(uuidv4());
+            clearSearchBar({ clearText: true });
+            setSearchText("");
+            hasAutoPushed.current = false;
+          }}
+        />
       );
-      if (response) {
-        await updateQuestion({ ...question, response, isStreaming: false });
-      }
-    } catch (error) {
-      // If an error or abort happens, we should save the partial state and stop streaming
-      setLocalQuestions((prev) => prev.map((q) => (q.id === question.id ? { ...q, response: output, isStreaming: false } : q)));
-      updateQuestion({ ...question, response: output, isStreaming: false });
-      
-      if (error instanceof Error && error.name === "AbortError") {
-        return; // Silent
-      }
-      const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-      showToast({ style: Toast.Style.Failure, title: "Error", message: errorMessage });
-    } finally {
-      setIsAskingQuestion(false);
-      setAbortController(null);
-      if (isFirstQuestion) setIsFirstQuestion(false);
     }
-  };
+  }, [activeQuestions.length, activeConversationId]);
 
-  const handleStopResponse = () => {
-    if (abortController) {
-      abortController.abort();
-      setAbortController(null);
-    }
+  const handleSubmit = () => {
+    if (!searchText.trim()) return;
+    
+    const isFirst = activeQuestions.length === 0;
+    const promptToSubmit = searchText.trim();
+    
+    setSearchText("");
+    clearSearchBar({ clearText: true });
+    
+    push(
+      <ConversationDetailView
+        conversationId={activeConversationId}
+        initialQuestionPrompt={promptToSubmit}
+        selectedModel={selectedModel}
+        isFirstQuestion={isFirst}
+        onStartNew={() => {
+          setActiveConversationId(uuidv4());
+          clearSearchBar({ clearText: true });
+          setSearchText("");
+          hasAutoPushed.current = false;
+        }}
+      />
+    );
   };
-
-  const renderActions = (question?: Question) => (
-    <ActionPanel>
-      <ActionPanel.Section>
-        {!isAskingQuestion ? (
-          <>
-            {isValidQuestionPrompt(searchQuestion.prompt) && (
-              <Action
-                title="Send Message"
-                icon={Icon.Message}
-                onAction={() => handleAskQuestion({ ...searchQuestion })}
-              />
-            )}
-            <Action
-              title="New Chat"
-              icon={Icon.Plus}
-              shortcut={Keyboard.Shortcut.Common.New}
-              onAction={() => push(<AskQuestion />, async () => refreshQuestions())}
-            />
-          </>
-        ) : (
-          <Action title="Stop Generating" icon={Icon.Stop} onAction={handleStopResponse} />
-        )}
-      </ActionPanel.Section>
-      {question && (
-        <ActionPanel.Section>
-          <Action.CopyToClipboard content={question.response} title="Copy Response" />
-          <Action
-            title="Delete Message"
-            icon={Icon.Trash}
-            style={Action.Style.Destructive}
-            onAction={() =>
-              confirmAlert({
-                title: "Delete message?",
-                primaryAction: { title: "Delete", onAction: () => removeQuestion(question) },
-              })
-            }
-          />
-        </ActionPanel.Section>
-      )}
-    </ActionPanel>
-  );
 
   return (
     <List
-      isShowingDetail={true}
-      filtering={false}
-      searchText={searchQuestion.prompt}
-      onSearchTextChange={(prompt) => setSearchQuestion((prev) => ({ ...prev, prompt }))}
-      searchBarPlaceholder="Type a message..."
+      searchText={searchText}
+      onSearchTextChange={setSearchText}
+      searchBarPlaceholder={activeQuestions.length > 0 ? "Ask follow-up..." : "Type a message..."}
       isLoading={isLoadingQuestions}
-      selectedItemId={selectedQuestionId ?? undefined}
-      actions={renderActions()}
       searchBarAccessory={
         <List.Dropdown
           tooltip="Select Model"
@@ -238,23 +261,64 @@ export default function AskQuestion({ conversationId }: ChatProps) {
             </ActionPanel>
           }
         />
-      ) : questions.length === 0 ? (
+      ) : activeQuestions.length === 0 ? (
         <List.EmptyView
           title="Start a Conversation"
           description="Type a message above to get started."
           icon={Icon.Bubble}
+          actions={
+            <ActionPanel>
+              {isValidQuestionPrompt(searchText) && (
+                <Action title="Send Message" icon={Icon.Message} onAction={handleSubmit} />
+              )}
+            </ActionPanel>
+          }
         />
       ) : (
-        questions.map((q) => (
-          <List.Item
-            id={q.id}
-            key={q.id}
-            title={q.prompt}
-            accessories={q.isStreaming ? [{ icon: Icon.CircleProgress }] : undefined}
-            detail={<List.Item.Detail markdown={q.id === selectedQuestionId ? q.response || output : q.response} />}
-            actions={renderActions(q)}
-          />
-        ))
+        <List.EmptyView
+          title="Resume Conversation"
+          description="Press Enter to view chat or type a new message above."
+          icon={Icon.Message}
+          actions={
+            <ActionPanel>
+              {isValidQuestionPrompt(searchText) ? (
+                <Action title="Send Message" icon={Icon.Message} onAction={handleSubmit} />
+              ) : (
+                <Action
+                  title="View Chat"
+                  icon={Icon.Binoculars}
+                  onAction={() => {
+                    hasAutoPushed.current = true;
+                    push(
+                      <ConversationDetailView
+                        conversationId={activeConversationId}
+                        selectedModel={selectedModel}
+                        isFirstQuestion={false}
+                        onStartNew={() => {
+                          setActiveConversationId(uuidv4());
+                          clearSearchBar({ clearText: true });
+                          setSearchText("");
+                          hasAutoPushed.current = false;
+                        }}
+                      />
+                    );
+                  }}
+                />
+              )}
+              <Action
+                title="Start New Chat"
+                icon={Icon.Plus}
+                shortcut={Keyboard.Shortcut.Common.New}
+                onAction={() => {
+                  setActiveConversationId(uuidv4());
+                  clearSearchBar({ clearText: true });
+                  setSearchText("");
+                  hasAutoPushed.current = false;
+                }}
+              />
+            </ActionPanel>
+          }
+        />
       )}
     </List>
   );
