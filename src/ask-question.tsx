@@ -174,6 +174,7 @@ export default function AskQuestion({ conversationId }: ChatProps) {
   return (
     <List
       isShowingDetail={true}
+      filtering={false}
       searchText={searchQuestion.prompt}
       onSearchTextChange={(prompt) => setSearchQuestion((prev) => ({ ...prev, prompt }))}
       searchBarPlaceholder="Type a message..."
