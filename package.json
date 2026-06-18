@@ -78,8 +78,9 @@
     }
   ],
   "dependencies": {
-    "@raycast/api": "^1.104.12",
+    "@raycast/api": "npm:@vicinae/api@^0.21.7",
     "@raycast/utils": "^1.18.1",
+    "@vicinae/api": "^0.21.7",
     "react": "^18.3.1",
     "uuid": "^11.0.5"
   },
@@ -100,13 +101,12 @@
     "@types/react": "18.3.3"
   },
   "scripts": {
-    "build": "ray build",
-    "dev": "ray develop",
-    "fix-lint": "ray lint --fix",
-    "lint": "ray lint",
+    "build": "vici build",
+    "dev": "vici develop",
+    "fix-lint": "vici lint --fix",
+    "lint": "vici lint",
     "lint:ox": "oxlint -c .oxlintrc.json src/",
     "fmt": "oxfmt --write src/",
-    "fmt:check": "oxfmt --check src/",
-    "publish": "npx @raycast/api@latest publish"
+    "fmt:check": "oxfmt --check src/"
   }
 }
