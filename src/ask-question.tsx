@@ -92,7 +92,6 @@ export default function AskQuestion({ conversationId }: ChatProps) {
     try {
       const handleStreamingOutput = (output: string) => {
         setOutput(output);
-        updateQuestion({ ...question, response: output, isStreaming: true }, true);
       };
 
       const response = await generateStreamedResponse(
@@ -106,6 +105,9 @@ export default function AskQuestion({ conversationId }: ChatProps) {
         await updateQuestion({ ...question, response, isStreaming: false });
       }
     } catch (error) {
+      // If an error or abort happens, we should save the partial state and stop streaming
+      updateQuestion({ ...question, response: output, isStreaming: false });
+      
       if (error instanceof Error && error.name === "AbortError") {
         return; // Silent
       }
