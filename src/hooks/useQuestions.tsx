@@ -77,6 +77,10 @@ export function useQuestions() {
     }
   }, []);
 
+  const updateLocally = useCallback((id: string, response: string) => {
+    setData((prev) => prev.map((q) => (q.id === id ? { ...q, response } : q)));
+  }, []);
+
   // TODO: fix to align with `add`
   const remove = useCallback(async (question: Question) => {
     const toast = await showToast({
@@ -164,6 +168,7 @@ export function useQuestions() {
       isLoading,
       add,
       update,
+      updateLocally,
       remove,
       removeByConversationId,
       getByConversationId,
@@ -175,6 +180,7 @@ export function useQuestions() {
       isLoading,
       add,
       update,
+      updateLocally,
       remove,
       removeByConversationId,
       getByConversationId,

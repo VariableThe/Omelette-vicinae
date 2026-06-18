@@ -54,6 +54,7 @@ export default function AskQuestion({ conversationId }: ChatProps) {
     getByConversationId,
     add: addQuestion,
     update: updateQuestion,
+    updateLocally,
     remove: removeQuestion,
     refresh: refreshQuestions,
   } = useQuestions();
@@ -92,6 +93,7 @@ export default function AskQuestion({ conversationId }: ChatProps) {
     try {
       const handleStreamingOutput = (output: string) => {
         setOutput(output);
+        updateLocally(question.id, output);
       };
 
       const response = await generateStreamedResponse(
@@ -171,7 +173,7 @@ export default function AskQuestion({ conversationId }: ChatProps) {
 
   return (
     <List
-      isShowingDetail={questions.length !== 0}
+      isShowingDetail={true}
       searchText={searchQuestion.prompt}
       onSearchTextChange={(prompt) => setSearchQuestion((prev) => ({ ...prev, prompt }))}
       searchBarPlaceholder="Type a message..."
