@@ -1,6 +1,6 @@
-# Omelette for Raycast
+# Omelette for Vicinae
 
-Access any AI model supported by OpenRouter directly within Raycast. This extension provides a native interface for interacting with large language models like GPT-5.4, Claude Sonnet 4.6, and NVIDIA Nemotron 3 Super, featuring real-time streaming and local conversation persistence.
+Access any AI model supported by OpenRouter directly within Vicinae. This extension provides a native interface for interacting with large language models like GPT-5.4, Claude Sonnet 4.6, and NVIDIA Nemotron 3 Super, featuring real-time streaming and local conversation persistence.
 
 ![Chat Interface](assets/1-chat.png)
 
@@ -10,8 +10,8 @@ Access any AI model supported by OpenRouter directly within Raycast. This extens
 - **Direct Model Switching**: Switch models instantly within the chat interface using the search bar dropdown—no need to go to settings.
 - **Quick AI Actions**: Perform common AI tasks like summarizing, improving writing, or fixing grammar on selected text with a single command.
 - **Low-Latency Streaming**: Responses are streamed word-by-word using the native Fetch API and ReadableStream for an interactive chat experience.
-- **Local History**: Conversation data is stored securely on your machine via Raycast's LocalStorage, enabling you to search and resume previous chats.
-- **Keyboard-First Design**: Send messages, start new chats, and manage history using standard Raycast shortcuts.
+- **Local History**: Conversation data is stored securely on your machine via Vicinae's LocalStorage, enabling you to search and resume previous chats.
+- **Keyboard-First Design**: Send messages, start new chats, and manage history using standard Vicinae shortcuts.
 
 ![Conversation History](assets/2-history.png)
 
@@ -43,7 +43,7 @@ Enter the slug for the model you wish to use as your default. You can find the f
 - `nvidia/nemotron-3-super-120b-a12b:free`
 
 ### 3. Setup Steps
-1. Open the **New Chat** command in Raycast.
+1. Open the **New Chat** command in Vicinae.
 2. If it is your first time, you will be prompted to enter your API key and default model ID.
 3. Use the **Model Dropdown** in the search bar to switch between popular models on the fly.
 4. Use **`Cmd + Shift + ,`** at any time to update your core preferences.
@@ -51,7 +51,7 @@ Enter the slug for the model you wish to use as your default. You can find the f
 ## Technical Details
 
 - **Privacy**: No conversation data is sent to external servers other than OpenRouter.
-- **Dependencies**: Built using the latest Raycast API standards with minimal external dependencies.
+- **Dependencies**: Built using the latest Vicinae API standards with minimal external dependencies.
 - **Streaming**: Implements a robust buffer management system to handle JSON fragments in network packets.
 
 ---
